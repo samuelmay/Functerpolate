@@ -77,12 +77,6 @@
 	 ~@body
 	 (plot-data-model ~title))))
 
-(defn interpolated-fn-plot [title x y]
-  (let [interpolated-fn (lagrange-interpolation-fn x y)]
-    (with-new-plot title
-     (add-function "Interpolated function" interpolated-fn (first x) (last x))
-     (add-data "Points" x y :line false))))
-
 (defmulti plot-fitted-curve 
   (fn [model title x y] 
     (cond
