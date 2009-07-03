@@ -95,7 +95,7 @@
       (map? model) :regression)))
 
 (defmethod plot-fitted-curve :regression
-  [{:keys [name function formula r2 SS]} title x y]
+  [{:keys [model name function formula r2 SS]} title x y]
   (let [caption (new JLabel (str "Function: " formula))
 	plot (with-new-plot title
 			    (add-data "Data" x y)

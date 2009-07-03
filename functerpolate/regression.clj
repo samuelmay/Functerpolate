@@ -57,15 +57,15 @@ squares"
 
 (def *models* (vector :Linear :Logarithmic :Exponential))
 
-(defstruct regression-fit :name :function :formula :r2 :SS)
+;; type is a keyword, name is a string
+(defstruct regression-fit :model :name :function :formula :r2 :SS)
 
 ;; returns a regression-fit struct
 (defmulti fit-model (fn [model x y] model))
 
 (defmethod fit-model :Linear [model x y]
   (let [[a b r2 SS] (linear-regression x y)]
-    (struct regression-fit
-	    "linear"
+    (struct regression-fit model "linear"
 	    (fn [x] (+ a (* b x)))
 	    (format "y = %fx%+f" b a)
 	    r2 SS)))
@@ -74,26 +74,22 @@ squares"
   (let [[a b r2 SS] (linear-regression x (map log y))
 	alpha (exp a)
 	beta b]
-    (struct regression-fit
-	    "exponential"
+    (struct regression-fit model "exponential"
 	    (fn [x] (* alpha (exp (* beta x))))
 	    (format "y = %fe^(%fx)" alpha beta)
 	    r2 SS)))
 
 (defmethod fit-model :Logarithmic [model x y]
   (let [[a b r2 SS] (linear-regression (map log x) y)]
-    (struct regression-fit
-	    "logarithmic"
+    (struct regression-fit model "logarithmic"
 	    (fn [x] (+ a (* b (log x))))
 	    (format "y = %f%+fln(x)" a b)
 	    r2 SS)))
 
 (defmethod fit-model :Best [model x y] 
-  (let [{:keys [name function formula r2 SS]} 
+  (let [{:keys [fitted-model name function formula r2 SS]} 
 	(last (sort-by :r2 (map #(fit-model % x y) *models*)))]
-    (struct regression-fit
-	    "best"
+    (struct regression-fit fitted-model "best"
 	    function
 	    (str formula " (suggested " name " fit)")
 	    r2 SS)))
-

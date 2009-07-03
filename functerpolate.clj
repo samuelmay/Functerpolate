@@ -67,7 +67,7 @@
 
 (defn perform-regression [x y unknowns model]
   (let [regression (fit-model model x y)
-	{:keys [name function formula r2 SS]} regression
+	{:keys [rmodel name function formula r2 SS]} regression
 	[interpolated-values a b] (eval-unknown-values function x unknowns)]
     (if *make-plot*
       (let [plot (plot-fitted-curve regression "Results Of Regression" x y)]
