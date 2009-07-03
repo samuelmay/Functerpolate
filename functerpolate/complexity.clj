@@ -64,8 +64,8 @@
       (when plot
 	(plot-fitted-curve regression "Plot of Time Complexity" n runtimes))
       (when print
-	(println "The suggested complexity is" bigO ".")
-	(println "Input size    Average runtime")
+	(println (format "The suggested complexity is %s." bigO))
+	(println (format "Input size    Average runtime over %d runs" *runs*))
 	(printdata n runtimes)
 	(when (not (empty? extrapolate))
 	  (println "Input size    Predicted runtime")
