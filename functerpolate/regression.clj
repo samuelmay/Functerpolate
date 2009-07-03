@@ -86,10 +86,10 @@ squares"
 	    (format "y = %f%+fln(x)" a b)
 	    r2 SS)))
 
-(defmethod fit-model :Best [model x y] 
-  (let [{:keys [fitted-model name function formula r2 SS]} 
+(defmethod fit-model :Best [best x y] 
+  (let [{:keys [model name function formula r2 SS]} 
 	(last (sort-by :r2 (map #(fit-model % x y) *models*)))]
-    (struct regression-fit fitted-model "best"
+    (struct regression-fit model "best"
 	    function
 	    (str formula " (suggested " name " fit)")
 	    r2 SS)))
