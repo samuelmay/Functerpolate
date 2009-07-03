@@ -54,6 +54,8 @@
     (.setMinimumValueX 0)
     (.setMinimumValueY 0)))
 
+(defstruct plot :model :coords :renderer :chart :frame)
+
 (defn plot-data-model [model title]
   (let [coords   (new CoordSystem model)
 	renderer (new MultiScatterChartRenderer coords model)
@@ -65,7 +67,8 @@
       (.setSize 800 500)
       (.setResizable true)
       (.add chart)
-      (.setVisible true))))
+      (.setVisible true))
+    (struct plot model coords renderer chart frame)))
 
 (defmacro with-new-plot [title & body]
   `(let [model# (new MultiScatterDataModel)]
@@ -76,6 +79,14 @@
      (-> model#
 	 ~@body
 	 (plot-data-model ~title))))
+
+(defmacro with-plot [plot & body]
+  ;; takes a 'plot' struct and updates
+  `(let [chart# (:chart ~plot)
+	 model# (:model ~plot)]
+     (-> model# ~@body)
+     ;; update ui
+     (. chart# repaint)))
 
 (defmulti plot-fitted-curve 
   (fn [model title x y] 
@@ -94,9 +105,10 @@
     ;; set the minimum size of the caption to prevent covering
     (. caption setMinimumSize (new Dimension 800 40))
     (. caption setBorder (new EmptyBorder 8 20 8 20))
-    (doto plot
+    (doto (:frame plot)
       (.add caption BorderLayout/PAGE_END)
-      (.setSize 800 540))))
+      (.setSize 800 540))
+    plot))
 
 (defmethod plot-fitted-curve :model
   ([model title x y]
