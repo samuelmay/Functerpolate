@@ -30,14 +30,19 @@
 ;;     return the plot argument you got given.
 
 (defnk add-data [plot name x y :line false :markers true]
-  (let [x (into-array Double/TYPE (map float x))
-	y (into-array Double/TYPE (map float y))]
-    (doto (:model plot)
-      (.addData x y name)
-      ;; eh, by default let's turn them both on
-      (.setSeriesLine name line)
-      (.setSeriesMarker name markers))
-    plot))
+  ;; x and y must be the same length, and not empty. If this is false, don't add
+  ;; anything to the plot. (In other words, silently fail. This is a feature,
+  ;; not a bug)
+  (do (when (and (== (count x) (count y))
+		 (not (empty? y)))
+	(let [x (into-array Double/TYPE (map float x))
+	      y (into-array Double/TYPE (map float y))]
+	  (doto (:model plot)
+	    (.addData x y name)
+	    ;; eh, by default let's turn them both on
+	    (.setSeriesLine name line)
+	    (.setSeriesMarker name markers))))
+      plot))
 
 ;; helper for 'add-function'. It may be of general use, so I won't make it
 ;; private/inline.
@@ -92,6 +97,10 @@
 
 (defn update [plot]
   (.repaint (:chart plot)) plot)
+
+(defn exit-on-close [plot]
+  (.setDefaultCloseOperation (:frame plot) JFrame/EXIT_ON_CLOSE)
+  plot)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; The main interface macros, which provide a framework to use all the previous
