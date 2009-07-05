@@ -22,9 +22,10 @@
   (let [a (first x)
 	b (last x)
 	noisy-y (add-noise (map function x))]
-    (with-new-plot title
-      (add-function "Function" function a b)
-      (add-data "Noisy data" x noisy-y))))
+    (with-new-plot
+     (add-label title)
+     (add-function "Function" function a b)
+     (add-data "Noisy data" x noisy-y))))
 
 (def dataset-1 
      [[5.7 6.8 9.6 10.0 10.7 12.6 14.4 15.0 15.3 16.2 17.8 18.7 19.7 20.6
@@ -45,6 +46,13 @@
 (defn linear-regression-2 []
   (let [[x y] dataset-2]
     (plot-fitted-curve :Best "Highway Runoff" x y)))
+
+(defn interpolated-fn-plot [title x y]
+  (let [function (lagrange-interpolation-fn x y)]
+    (with-new-plot
+     (add-label title)
+     (add-function "Interpolated Function" function (first x) (last x))
+     (add-data "Given Points" x y))))
 
 (defn interpolated-fn-1 []
   (let [x [1 2 4 8]
