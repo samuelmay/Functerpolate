@@ -31,12 +31,14 @@ The required arguments are:
   (let [[program input-generator & dont-care] rest-of-args
 	numerical-opts (interleave [:start :limit :npoints :runs]
 				   (map parseint 
-					(list start limit points runs)))]
-    (apply complexity
-	   program 
-	   input-generator 
-	   :plot plot?
-	   ;; nil counts as an empty collection, which will be handled properly
-	   ;; by the function
-	   :extrapolate extrapolate
-	   numerical-opts)))
+					(list start limit points runs)))
+	analysis (apply complexity
+			program 
+			input-generator 
+			:plot plot?
+			;; nil counts as an empty collection, which will be
+			;; handled properly by the function
+			:extrapolate extrapolate
+			numerical-opts)]
+    (if plot
+      (with-plot (:plot analysis) (exit-on-close)))))

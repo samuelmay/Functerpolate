@@ -5,8 +5,7 @@
   (:refer-clojure :exclude (time))
   (:use (clojure.contrib [def :only (defmacro- defnk)]
 			 shell-out)
-	(functerpolate regression plot))
-  (:import javax.swing.JFrame))
+	(functerpolate regression plot)))
 
 ;; Yay OS dependance. I used to do the executing and piping in pure java, using
 ;; Runtime.exec and streams, but the overhead was ridiculous.
@@ -68,6 +67,8 @@
     (println (format "%-12d  %fs" (first n) (first runtimes)))
     (recur (rest n) (rest runtimes))))
 
+(defstruct complexity-analysis :input-sizes :runtimes :regression :plot)
+
 (defnk complexity 
   [function input-generator :start 10 :limit 100 :npoints 10 :runs 10
    :plot false :print true :extrapolate []]
@@ -77,12 +78,15 @@
 	  runtimes   (map (partial run-time function input-generator) n)
 	  regression (fit-model :Best n runtimes)
 	  predicted  (map (:function regression) extrapolate)
-	  bigO       ((:model regression) *big-O-map*)]
-      ;; more needs to be done here
-      (when plot
-	(. (:frame (plot-fitted-curve regression "Plot of Time Complexity" 
-				      n runtimes)) 
-	   setDefaultCloseOperation JFrame/EXIT_ON_CLOSE))
+	  bigO       ((:model regression) *big-O-map*)
+	  plotstruct (if plot
+		       (with-plot 
+			(plot-fitted-curve regression 
+					   {:title "Plot of Time Complexity",
+					    :xaxis "Input size",
+					    :yaxis "Time (seconds)"} 
+					   n runtimes)
+			(add-data "Predicted values" extrapolate predicted)))]
       (when print
 	(println (format "The suggested complexity is %s." bigO))
 	(println (format "Input size    Average runtime over %d runs" *runs*))
@@ -90,4 +94,4 @@
 	(when (not (empty? extrapolate))
 	  (println "Input size    Predicted runtime")
 	  (printdata extrapolate predicted)))
-      regression)))
+      (struct complexity-analysis n runtimes regression plotstruct))))
