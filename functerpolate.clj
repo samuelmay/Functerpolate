@@ -2,7 +2,15 @@
 		     regression
 		     plot)
      '(clojure.contrib command-line))
-(import 'javax.swing.JFrame)
+
+(defn parse-numbers [arg]
+  (cond (string? arg)
+	(map #(Double/parseDouble %) 
+	     ;; Aaah regular expressions. Larry Wall is *not* allowed to talk
+	     ;; about Lisp being ugly.
+	     (re-seq #"[-+]?[0-9]+(?:\.[0-9]+)?" arg))
+	(coll? arg)
+	(apply concat (map parse-numbers arg))))
 
 (defn read-input []
   (loop [input [() () ()] next-line (read-line)]
@@ -11,10 +19,7 @@
 	[(into [] (reverse x))
 	 (into [] (reverse y))
 	 (into [] (reverse unknowns))])
-      (let [data (map #(Double/parseDouble %) 
-		      ;; Aaah regular expressions. Larry Wall is *not* allowed
-		      ;; to talk about Lisp being ugly.
-		      (re-seq #"[-+]?[0-9]+(?:\.[0-9]+)?" next-line))
+      (let [data (parse-numbers next-line)
 	    [x y unknowns] input]
 	(recur (if (== (count data) 1)
 		 [x y (cons (first data) unknowns)]
@@ -26,9 +31,9 @@
     (println (first x) (first y))
     (recur (rest x) (rest y))))
 
-(defmacro with-input [function & args]
+(defmacro with-input [values [function & args]]
   `(let [[x# y# unknowns#] (read-input)]
-     (~function x# y# unknowns# ~@args)))
+     (~function x# y# (concat (parse-numbers ~values) unknowns#) ~@args)))
 
 (def *make-plot* false)
 (def *quiet* false)
@@ -55,13 +60,13 @@
     (if *make-plot*
       ;; with-new-plot returns a 'plot' struct with a bunch of things in it,
       ;; including the JFrame the plot is embedded in.
-      (let [plot (with-new-plot "Results Of Interpolation"
-		   (add-function "Interpolated Function" function a b)
-		   (add-data "Given Points" x y)
-		   (add-data "Interpolated Points" unknowns 
-			     interpolated-values))]
-	(. (:frame plot) setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)))
-    (when (not *quiet*)
+      (with-new-plot
+       (add-label  "Results Of Interpolation")
+       (add-function "Interpolated Function" function a b)
+       (add-data "Given Points" x y)
+       (add-data "Interpolated Points" unknowns interpolated-values)
+       (exit-on-close)))
+    (when (not (or *quiet* (empty? unknowns)))
       (println "Interpolated values:"))
     (write-output unknowns interpolated-values)))
 
@@ -75,7 +80,7 @@
 	(when (not (empty? unknowns))
 	  (with-plot plot (add-data "Interpolated Points" unknowns
 				    interpolated-values)))
-	(. (:frame plot) setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)))
+	(with-plot plot (exit-on-close))))
     (when (not *quiet*)
       (println "-- Results of " name "regression --")
       (println "Function:                     " formula)
@@ -96,17 +101,19 @@
 
 (with-command-line *command-line-args*
   "interpolator -- interpolate and extrapolate values from a dataset"
-  [[regression r "Use the given regression method to fit a least-squares line of best fit. Linear, logarithmic, and exponential regressions are available, as well as 'best' which will try to choose the correct regression."]
-   [interpolate? i? "Fit an polynomial passing through all the given points, using Lagrange interpolation."] 
+  [[regression r "Use the given regression method to fit a least-squares line of best fit. Linear, logarithmic, and exponential regressions are available, as well as 'best' which will try to choose the correct regression." "best"]
+   [interpolate? i? "Instead of performing a least-squares regression, fit a polynomial that passes through all the given points exactly, using Lagrange interpolation."] 
    [plot? p? "Plot the data set, fitted function, and interpolated points."]
    [quiet? q? "Just print out the interpolated data, nothing else thanks"]
    values]
   (binding [*make-plot* plot? *quiet* quiet?]
     (cond
-      interpolate? (with-input perform-interpolation)
-      (contains? regression-map regression) (with-input 
-					     perform-regression
-					     (regression-map regression))
+      interpolate? 
+      (with-input values (perform-interpolation))
+
+      (contains? regression-map regression) 
+      (with-input values (perform-regression (regression-map regression)))
+
       :else (println 
-	     "Please specify either 'interpolate' or a regression type")))
+	     "Unknown regression type.")))
 )
