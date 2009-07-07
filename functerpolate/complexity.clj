@@ -9,7 +9,7 @@
 
 ;; Yay OS dependance. I used to do the executing and piping in pure java, using
 ;; Runtime.exec and streams, but the overhead was ridiculous.
-(defmacro os-program-runner [executable command-format]
+(defmacro- os-program-runner [executable command-format]
   `(fn [program# input-generator# input-size#]
      (sh ~@executable 
 	 (format ~command-format 
