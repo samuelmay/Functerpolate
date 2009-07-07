@@ -101,7 +101,9 @@
       "best"        :Best})
 
 (with-command-line *command-line-args*
-  "interpolator -- interpolate and extrapolate values from a dataset"
+  "Interpolate and extrapolate values from a dataset.
+Usage: functerpolate.clj [options] [values to interpolate]
+"
   [[regression r "Use the given regression method to fit a least-squares
                           line of best fit. Linear, logarithmic, and exponential
                           regressions are available, as well as 'best' which 

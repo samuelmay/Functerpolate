@@ -8,8 +8,8 @@
        (re-seq #"[-+]?[0-9]+(?:\.[0-9]+)?" lst)))
 
 (with-command-line *command-line-args*
-  "complexity.clj: attempt to detirmine the time complexity vs input size for a 
-given program.
+  "Attempt to detirmine the time complexity vs input size for a given program.
+Usage: complexity.clj [options] test-program input-generator
 
 The required arguments are:
  - an executable program to test
