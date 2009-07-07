@@ -80,13 +80,19 @@
 	  predicted  (map (:function regression) extrapolate)
 	  bigO       ((:model regression) *big-O-map*)
 	  plotstruct (if plot
-		       (with-plot 
-			(plot-fitted-curve regression 
-					   {:title "Plot of Time Complexity",
-					    :xaxis "Input size",
-					    :yaxis "Time (seconds)"} 
-					   n runtimes)
-			(add-data "Predicted values" extrapolate predicted)))]
+		       (with-new-plot 
+			(add-label {:title "Plot of Time Complexity",
+				    :xaxis "Input size",
+				    :yaxis "Time (seconds)"})
+			(add-function (str (:name regression) " fitted function")
+				      (:function regression)
+				      (apply min (concat n extrapolate))
+				      (apply max (concat n extrapolate)))
+			(add-data "Average running times" n runtimes)
+			(add-data "Extrapolated running times"
+				  extrapolate predicted)
+			(add-caption (str "Function: " 
+					  (:formula regression)))))]
       (when print
 	(println (format "The suggested complexity is %s." bigO))
 	(println (format "Input size    Average runtime over %d runs" *runs*))

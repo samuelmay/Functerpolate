@@ -74,13 +74,14 @@
   (let [regression (fit-model model x y)
 	{:keys [rmodel name function formula r2 SS]} regression
 	[interpolated-values a b] (eval-unknown-values function x unknowns)]
-    (if *make-plot*
-      (let [plot (plot-fitted-curve regression "Results Of Regression" x y)]
-	;; add in interpolated values if so desired
-	(when (not (empty? unknowns))
-	  (with-plot plot (add-data "Interpolated Points" unknowns
-				    interpolated-values)))
-	(with-plot plot (exit-on-close))))
+    (when *make-plot*
+      (with-new-plot
+       (add-label    :title "Results Of Regression")
+       (add-function (str name " fitted curve"))
+       (add-data     "Given Data Points" x y)
+       (add-data     "Interpolate Points" unknowns interpolated-values)
+       (add-caption  (str "Formula" formula))
+       (exit-on-close)))
     (when (not *quiet*)
       (println "-- Results of " name "regression --")
       (println "Function:                     " formula)

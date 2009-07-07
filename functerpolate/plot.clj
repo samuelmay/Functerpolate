@@ -102,6 +102,16 @@
   (.setDefaultCloseOperation (:frame plot) JFrame/EXIT_ON_CLOSE)
   plot)
 
+(defn add-caption [plot string]
+  (let [caption (new JLabel string)]
+    (doto caption
+      (.setMinimumSize (new Dimension 800 40))
+      (.setBorder      (new EmptyBorder 8 20 8 20)))
+    (doto (:frame plot)
+      (.add caption BorderLayout/PAGE_END)
+      (.setSize 800 540))
+    plot))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; The main interface macros, which provide a framework to use all the previous
 ;; functions.
@@ -128,32 +138,3 @@
 (defmacro with-plot [plot & body]
   ;; takes a 'plot' struct, apply plot functions, and update ui
   `(-> ~plot ~@body (update)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Now we get to specific types of plotting.
-(defmulti plot-fitted-curve 
-  (fn [model title x y] 
-    (cond
-      (keyword? model) :model
-      (map? model) :regression)))
-
-(defmethod plot-fitted-curve :regression
-  [{:keys [model name function formula r2 SS]} title x y]
-  (let [caption (new JLabel (str "Function: " formula))
-	plot (with-new-plot
-	      (add-label title)
-	      (add-data "Data" x y)
-	      (add-function (str name " fitted curve") 
-			    function 
-			    (first x) (last x)))]
-    ;; set the minimum size of the caption to prevent covering
-    (. caption setMinimumSize (new Dimension 800 40))
-    (. caption setBorder (new EmptyBorder 8 20 8 20))
-    (doto (:frame plot)
-      (.add caption BorderLayout/PAGE_END)
-      (.setSize 800 540))
-    plot))
-
-(defmethod plot-fitted-curve :model
-  ([model title x y]
-     (plot-fitted-curve (fit-model model x y) title x y)))

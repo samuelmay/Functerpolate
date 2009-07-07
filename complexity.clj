@@ -1,5 +1,6 @@
 (use '(functerpolate regression 
-		     complexity)
+		     complexity
+		     plot)
      '(clojure.contrib command-line))
 
 (defn parse-number-list [lst]
@@ -40,5 +41,5 @@ The required arguments are:
 			;; handled properly by the function
 			:extrapolate extrapolate
 			numerical-opts)]
-    (if plot
+    (if plot?
       (with-plot (:plot analysis) (exit-on-close)))))
