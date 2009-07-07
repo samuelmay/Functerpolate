@@ -101,10 +101,17 @@
 
 (with-command-line *command-line-args*
   "interpolator -- interpolate and extrapolate values from a dataset"
-  [[regression r "Use the given regression method to fit a least-squares line of best fit. Linear, logarithmic, and exponential regressions are available, as well as 'best' which will try to choose the correct regression." "best"]
-   [interpolate? i? "Instead of performing a least-squares regression, fit a polynomial that passes through all the given points exactly, using Lagrange interpolation."] 
-   [plot? p? "Plot the data set, fitted function, and interpolated points."]
-   [quiet? q? "Just print out the interpolated data, nothing else thanks"]
+  [[regression r "Use the given regression method to fit a least-squares
+                          line of best fit. Linear, logarithmic, and exponential
+                          regressions are available, as well as 'best' which 
+                          will try to choose the best regression."]
+   [interpolate? i? "Instead of performing a least-squares regression, fit
+                          a polynomial that passes through all the given points
+                          exactly, using Lagrange interpolation."] 
+   [plot? p? "Plot the data set, fitted function, and interpolated
+                          points."]
+   [quiet? q? "Print out just the interpolated data, nothing else 
+                          thanks."]
    values]
   (binding [*make-plot* plot? *quiet* quiet?]
     (cond
