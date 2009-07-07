@@ -16,16 +16,21 @@ a Java interface may be added.</p>
 
 <h2>Setup and Installation</h2>
 
-<p><strong>The Hard Way:</strong>Three dependancies are required: The clojure
-language, the clojure-contrib clojure library, and the OpenChart2 java plotting
-library. All these jar files must be in your java classpath. From the
+<p><strong>The Hard Way:</strong> Three dependancies are required:
+The <a href="http://code.google.com/p/clojure/downloads/list">clojure
+language</a>,
+the <a href="http://github.com/richhickey/clojure-contrib/tree/master">clojure-contrib
+clojure library</a> (which must be built from source at the moment),
+the <a href="http://www.jfree.org/jfreechart/download.html">JFreeChart java
+plotting library</a>, and the JCommon java library (included with
+JFreeChart). All these jar files must be in your java classpath. From the
 Functerpolate top level directory, run something like:
 <pre>
-java -cp .:/path/to/clojure.jar:/path/to/clojure-contrib.jar/:/path/to/openchart2.jar clojure.main [functerpolate script] [arguments]
+java -cp .:/path/to/clojure.jar:/path/to/clojure-contrib.jar/:/path/to/jfreechart-version.jar:/path/to/jcommon-version.jar clojure.main [functerpolate script] [arguments]
 </pre>
 </p>
 
-<p><strong>The Easy Way:</strong>Make sure you have the latest Java version
+<p><strong>The Easy Way:</strong> Make sure you have the latest Java version
 installed. Download the 'kitchen sink' version, and cd into the Functerpolate
 top level directory. On Linux or Mac (from a terminal), run:
 <pre>
@@ -58,7 +63,7 @@ specified using the 'regression' option.</p>
 
 <p><em>Example of use</em>
 <pre>
-samwise@hex in functerpolate $ clj functerpolate.clj
+samwise@hex in functerpolate $ ./functerpolate.sh
 interpolator -- interpolate and extrapolate values from a dataset
 Options
   --regression, -r &lt;arg&gt;  Use the given regression method to fit a least-squares
@@ -73,7 +78,7 @@ Options
                           points.
   --quiet, -q             Print out just the interpolated data, nothing else
                           thanks.
-samwise@hex in functerpolate $ clj functerpolate.clj -r linear -p
+samwise@hex in functerpolate $ ./functerpolate.sh -r linear -p
 0 1
 1 2
 2 3
@@ -99,7 +104,7 @@ to generate more accurate data.</p>
 
 <p><em>Example of use</em>
 <pre>
-samwise@hex in functerpolate $ clj complexity.clj
+samwise@hex in functerpolate $ ./complexity.sh
 complexity.clj: attempt to detirmine the time complexity vs input size for a
 given program.
 
@@ -137,22 +142,22 @@ Insertion sort
 
 Array after sorting
  7 257 752 856 955
-samwise@hex in functerpolate $ clj complexity.clj --plot --start 10000 --limit 30000 --runs 5 --extrapolate 40000,50000 ./isort ./genrandom
-The suggested complexity is O(N), or linear-time.
+samwise@hex in functerpolate $ ./complexity.sh --plot --start 10000 --limit 30000 --runs 5 --extrapolate 40000,50000 ./isort ./genrandom
+The suggested complexity is O(e^N), or exponential-time.
 Input size    Average runtime over 5 runs
-10000         1.083128s
-12222         1.590186s
-14444         2.201796s
-16666         2.864993s
-18888         3.702366s
-21111         4.638832s
-23333         5.597922s
-25555         6.568676s
-27777         7.735341s
-30000         8.961043s
+10000         1.101127s
+12222         1.574126s
+14444         2.179658s
+16666         2.903265s
+18888         3.631173s
+21111         4.494486s
+23333         5.478675s
+25555         6.714245s
+27777         7.984175s
+30000         9.211676s
 Input size    Predicted runtime
-40000         12.397597s
-50000         16.349103s
+40000         29.791387s
+50000         84.502785s
 </pre>
 <img src="results2.png" title="Plot of complexity analysis results" />
 </p>
