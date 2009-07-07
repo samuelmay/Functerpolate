@@ -8,18 +8,17 @@
   (:import [java.awt           BorderLayout Dimension]
 	   [javax.swing        JFrame JLabel]
 	   [javax.swing.border EmptyBorder]
-	   [com.approximatrix.charting        CoordSystem Title]
-	   [com.approximatrix.charting.model  MultiScatterDataModel]
-	   [com.approximatrix.charting.render MultiScatterChartRenderer]
-	   [com.approximatrix.charting.swing  ChartPanel]))
+	   ;; JFreeChart classes
+	   [org.jfree.chart ChartFactory ChartPanel JFreeChart]
+	    org.jfree.chart.axis.ValueAxis
+	   [org.jfree.chart.plot XYPlot PlotOrientation]
+	    org.jfree.chart.renderer.xy.XYItemRenderer
+	   [org.jfree.data.xy XYSeries XYSeriesCollection]))
 
 ;; WARNING: HEAVY JAVA INTEROP AHEAD
 
-;; I've tried to make this not *too* reliable on openchart2, but obviously I
-;; won't really know until I try to port it to, say, plplot.
-
-;; Main representation of a plot, with all the fiddly openchart2 internals.
-(defstruct plot :model :coords :renderer :chart :frame)
+;; Main representation of a plot, with all the fiddly jfreechart internals.
+(defstruct plot :plot-obj :chart-obj :panel-obj :frame-obj)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper functions that operate on plots. By convention, they should:
@@ -29,20 +28,29 @@
 ;;     programming. As the Java interop is not functional, you basically just
 ;;     return the plot argument you got given.
 
+;; create an XYSeries, populate it and add it to the dataset. Then get the
+;; XYPlot and renderer, and call setSeriesLinesVisible and
+;; setSeriesShapesVisible
 (defnk add-data [plot name x y :line false :markers true]
   ;; x and y must be the same length, and not empty. If this is false, don't add
   ;; anything to the plot. (In other words, silently fail. This is a feature,
   ;; not a bug)
-  (do (when (and (== (count x) (count y))
-		 (not (empty? y)))
-	(let [x (into-array Double/TYPE (map float x))
-	      y (into-array Double/TYPE (map float y))]
-	  (doto (:model plot)
-	    (.addData x y name)
-	    ;; eh, by default let's turn them both on
-	    (.setSeriesLine name line)
-	    (.setSeriesMarker name markers))))
-      plot))
+  (if (and (== (count x) (count y)) (not (empty? y)))
+    (let [series       (new XYSeries name)
+	  dataset      (. (:plot-obj plot) getDataset)
+	  series-index (do
+			 (. dataset addSeries series)
+			 (. dataset indexOf series))
+	  renderer     (. (:plot-obj plot) getRenderer)]
+      ;; add x and y to the new data series
+      (loop [xi x yi y]
+	(when (not (empty? xi))
+	  (. series add (first xi) (first yi))
+	  (recur (rest xi) (rest yi))))
+      ;; update the renderer flags for this series 
+      (. renderer setSeriesLinesVisible  series-index line) 
+      (. renderer setSeriesShapesVisible series-index markers)))
+  plot)
 
 ;; helper for 'add-function'. It may be of general use, so I won't make it
 ;; private/inline.
@@ -70,9 +78,9 @@
 (defn add-label
   ([plot position string]
      (case position
-       :title (.. (:chart plot) getTitle (setText string))
-       :xaxis (.setXAxisUnit (:coords plot) string)
-       :yaxis (.setYAxisUnit (:coords plot) string)) 
+       :title (.  (:chart-obj plot) setTitle string)
+       :xaxis (.. (:plot-obj plot)  getDomainAxis (setLabel string))
+       :yaxis (.. (:plot-obj plot)  getRangeAxis  (setLabel string))) 
      plot)
   ([plot title]
      (cond 
@@ -81,25 +89,14 @@
        (string? title) (add-label plot :title title))
      plot))
 
-;; Make the graph 'honest' (i.e., include the origin). Also sometimes the last
-;; data point will be partially cut off, so manually set the biggest
-;; values. Should be put last in the 'with-new-plot' macro body, otherwise your
-;; other data won't be scaled properly!
-(defn make-honest [plot] 
-  (doto (:model plot)
-    (.setAutoScale false)
-    (.setMinimumValueX 0)
-    (.setMinimumValueY 0))
-  plot)
-
 (defn make-visible [plot]
-  (.setVisible (:frame plot) true) plot)
+  (.setVisible (:frame-obj plot) true) plot)
 
 (defn update [plot]
-  (.repaint (:chart plot)) plot)
+  (.repaint (:panel-obj plot)) plot)
 
 (defn exit-on-close [plot]
-  (.setDefaultCloseOperation (:frame plot) JFrame/EXIT_ON_CLOSE)
+  (.setDefaultCloseOperation (:frame-obj plot) JFrame/EXIT_ON_CLOSE)
   plot)
 
 (defn add-caption [plot string]
@@ -107,7 +104,7 @@
     (doto caption
       (.setMinimumSize (new Dimension 800 40))
       (.setBorder      (new EmptyBorder 8 20 8 20)))
-    (doto (:frame plot)
+    (doto (:frame-obj plot)
       (.add caption BorderLayout/PAGE_END)
       (.setSize 800 540))
     plot))
@@ -116,17 +113,25 @@
 ;; The main interface macros, which provide a framework to use all the previous
 ;; functions.
 (defmacro with-new-plot [& body]
-  `(let [model#    (new MultiScatterDataModel)
-	 coords#   (new CoordSystem model#)
-	 renderer# (new MultiScatterChartRenderer coords# model#)
-	 chart#    (doto (new ChartPanel model# "New Plot")
-		     (.setCoordSystem coords#)
-		     (.addChartRenderer renderer# 0))
-	 frame#    (doto (new JFrame "Functerlate")
-		     (.setSize 800 500)
-		     (.setResizable true)
-		     (.add chart#))
-	 plot#     (struct plot model# coords# renderer# chart# frame#)]
+  `(let [dataset-obj# (new XYSeriesCollection)
+	 ;; have to use the dot special form manually here, as the namespace /
+	 ;; syntax for static members doesn't seem to work when the macro is
+	 ;; expanded in a different namespace.
+	 chart-obj#   (. ChartFactory createXYLineChart 
+		       "New Plot"
+		       ;; no axis labels
+		       nil nil
+		       dataset-obj#
+		       (. PlotOrientation VERTICAL)
+		       true false false)
+	 plot-obj#    (. chart-obj# getXYPlot)
+	 panel-obj#   (new ChartPanel chart-obj#)
+	 frame-obj#   (doto (new JFrame "Functerlate")
+			(.setSize 800 500)
+			(.setResizable true)
+			(.add panel-obj#))
+	 plot#        (struct plot 
+			      plot-obj# chart-obj# panel-obj# frame-obj#)]
      ;; The '->' macro is pretty crazy. Note that we will actually be using the
      ;; return value of each body form (i.e., the return value from add-function
      ;; or add-data) as the model input for the next body form. As 'doto'
