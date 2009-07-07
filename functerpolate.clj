@@ -77,10 +77,10 @@
     (when *make-plot*
       (with-new-plot
        (add-label    :title "Results Of Regression")
-       (add-function (str name " fitted curve"))
+       (add-function (str name " fitted curve") function a b)
        (add-data     "Given Data Points" x y)
-       (add-data     "Interpolate Points" unknowns interpolated-values)
-       (add-caption  (str "Formula" formula))
+       (add-data     "Interpolated Points" unknowns interpolated-values)
+       (add-caption  (str "Formula: " formula))
        (exit-on-close)))
     (when (not *quiet*)
       (println "-- Results of " name "regression --")
